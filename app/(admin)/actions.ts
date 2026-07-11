@@ -21,7 +21,7 @@ async function requireAdmin() {
 export async function setRestaurantStatus(formData: FormData) {
 	const { supabase, user } = await requireAdmin()
 	const id = String(formData.get("id"))
-	const status = String(formData.get("status"))
+	const status = String(formData.get("status")) as "active" | "suspended" | "pending"
 	if (!["active", "suspended", "pending"].includes(status)) return
 
 	await supabase.from("restaurants").update({ status }).eq("id", id)
@@ -54,7 +54,7 @@ export async function deleteRestaurant(formData: FormData) {
 export async function setUserRole(formData: FormData) {
 	const { supabase, user } = await requireAdmin()
 	const id = String(formData.get("id"))
-	const role = String(formData.get("role"))
+	const role = String(formData.get("role")) as "super_admin" | "owner" | "staff"
 	if (!["super_admin", "owner", "staff"].includes(role)) return
 	// Guard: don't let an admin strip their own super-admin role by accident.
 	if (id === user.id && role !== "super_admin") return

@@ -60,7 +60,7 @@ export function KitchenBoard({ restaurantId }: { restaurantId: string }) {
 		setOrders((prev) =>
 			prev.map((o) => (o.id === order.id ? { ...o, status: next } : o)),
 		)
-		await supabase.from("orders").update({ status: next }).eq("id", order.id)
+		await supabase.from("orders").update({ status: next as any }).eq("id", order.id)
 	}
 
 	return (

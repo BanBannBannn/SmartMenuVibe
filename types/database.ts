@@ -1424,3 +1424,9 @@ export const Constants = {
     },
   },
 } as const
+
+export type AppRole = Enums<"app_role">
+export type StaffRole = Enums<"staff_role">
+export type RestaurantStatus = Enums<"restaurant_status">
+export type OrderStatus = Enums<"order_status">
+export type RuleTypeDb = Enums<"rule_type">

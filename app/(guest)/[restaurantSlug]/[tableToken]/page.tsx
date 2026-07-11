@@ -15,7 +15,7 @@ export default async function GuestOrderingPage({
 	if (!menu) notFound()
 
 	return (
-		<div style={themeToCssVars(menu.restaurant.theme_settings)}>
+		<div style={themeToCssVars(menu.restaurant.theme_settings as any)}>
 			<GuestMenu menu={menu} />
 		</div>
 	)

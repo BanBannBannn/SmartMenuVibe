@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { signIn, type AuthState } from "@/app/(auth)/actions"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function LoginPage() {
+function LoginForm() {
 	const params = useSearchParams()
 	const redirectTo = params.get("redirect") ?? "/dashboard"
 	const [state, action, pending] = useActionState<AuthState, FormData>(
@@ -17,7 +17,6 @@ export default function LoginPage() {
 		undefined,
 	)
 	return (
-		<main className="flex min-h-screen items-center justify-center p-4">
 			<Card className="w-full max-w-sm">
 				<CardHeader>
 					<CardTitle>Đăng nhập SmartMenu</CardTitle>
@@ -48,6 +47,15 @@ export default function LoginPage() {
 					</p>
 				</CardContent>
 			</Card>
+	)
+}
+
+export default function LoginPage() {
+	return (
+		<main className="flex min-h-screen items-center justify-center p-4">
+			<Suspense fallback={<div>Đang tải...</div>}>
+				<LoginForm />
+			</Suspense>
 		</main>
 	)
 }

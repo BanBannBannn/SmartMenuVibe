@@ -15,7 +15,7 @@ export default async function PublicShowcasePage({
 	const menu = await loadPublicMenu(restaurantSlug)
 	if (!menu) notFound()
 
-	const style = themeToCssVars(menu.restaurant.theme_settings)
+	const style = themeToCssVars(menu.restaurant.theme_settings as any)
 	return (
 		<div style={style}>
 			<ShowcaseMenu menu={menu} />

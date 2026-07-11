@@ -275,9 +275,13 @@ export async function saveRecommendationRule(formData: FormData) {
 	}
 	await supabase.from("recommendation_rules").insert({
 		restaurant_id: String(formData.get("restaurantId")),
-		rule_type: String(formData.get("rule_type") ?? "best_seller"),
+		rule_type: String(formData.get("rule_type") ?? "best_seller") as
+			| "time_of_day"
+			| "weather"
+			| "combo"
+			| "best_seller",
 		name: String(formData.get("name") ?? "Luật mới"),
-		conditions,
+		conditions: conditions as any,
 		suggested_item_ids: String(formData.get("suggested_item_ids") ?? "")
 			.split(",")
 			.map((s) => s.trim())
