@@ -1,9 +1,11 @@
 import "server-only"
+import { cache } from "react"
 import { cookies } from "next/headers"
+import { getSessionUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 
 const RESTAURANT_FIELDS =
-	"id, name, slug, status, description, theme_settings, face_enabled, city, timezone, created_at"
+	"id, name, slug, status, description, theme_settings, face_enabled, city, timezone, created_at, logo_url, cover_url"
 
 export const ACTIVE_RESTAURANT_COOKIE = "active_restaurant"
 
@@ -18,66 +20,65 @@ export type OwnerRestaurant = {
 	city: string | null
 	timezone: string
 	created_at: string
+	logo_url: string | null
+	cover_url: string | null
 }
 
 /**
- * All restaurants the current user may manage: the ones they own PLUS any they
- * are staff of. This is the fix for the onboarding bug where a brand-new
- * account was landing on the first "active" restaurant in the whole platform
- * (the public-read RLS policy allows reading any active restaurant, so an
- * unfiltered query returned someone else's data).
+ * Restaurants the current user may manage. Request-scoped React cache avoids
+ * duplicate queries when the shared layout and a child page both need this
+ * data. Supabase RLS remains the authorization boundary.
  */
-export async function getAccessibleRestaurants(): Promise<OwnerRestaurant[]> {
-	const supabase = await createClient()
-	const {
-		data: { user },
-	} = await supabase.auth.getUser()
-	if (!user) return []
+export const getAccessibleRestaurants = cache(
+	async (): Promise<OwnerRestaurant[]> => {
+		const user = await getSessionUser()
+		if (!user) return []
 
-	const { data: staffRows } = await supabase
-		.from("restaurant_staff")
-		.select("restaurant_id")
-		.eq("user_id", user.id)
-	const staffIds = (staffRows ?? []).map((r) => r.restaurant_id)
+		const supabase = await createClient()
+		const [{ data: staffRows }, { data: owned }] = await Promise.all([
+			supabase
+				.from("restaurant_staff")
+				.select("restaurant_id")
+				.eq("user_id", user.id),
+			supabase
+				.from("restaurants")
+				.select(RESTAURANT_FIELDS)
+				.eq("owner_id", user.id),
+		])
 
-	const { data: owned } = await supabase
-		.from("restaurants")
-		.select(RESTAURANT_FIELDS)
-		.eq("owner_id", user.id)
+		const staffIds = (staffRows ?? []).map((row) => row.restaurant_id)
+		let staffed: OwnerRestaurant[] = []
+		if (staffIds.length > 0) {
+			const { data } = await supabase
+				.from("restaurants")
+				.select(RESTAURANT_FIELDS)
+				.in("id", staffIds)
+			staffed = (data ?? []) as OwnerRestaurant[]
+		}
 
-	let staffed: OwnerRestaurant[] = []
-	if (staffIds.length > 0) {
-		const { data } = await supabase
-			.from("restaurants")
-			.select(RESTAURANT_FIELDS)
-			.in("id", staffIds)
-		staffed = (data ?? []) as OwnerRestaurant[]
-	}
+		const byId = new Map<string, OwnerRestaurant>()
+		for (const restaurant of [
+			...((owned ?? []) as OwnerRestaurant[]),
+			...staffed,
+		]) {
+			byId.set(restaurant.id, restaurant)
+		}
+		return [...byId.values()].sort((a, b) =>
+			a.created_at.localeCompare(b.created_at),
+		)
+	},
+)
 
-	const byId = new Map<string, OwnerRestaurant>()
-	for (const r of [...((owned ?? []) as OwnerRestaurant[]), ...staffed]) {
-		byId.set(r.id, r)
-	}
-	return [...byId.values()].sort((a, b) =>
-		a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0,
-	)
-}
-
-/** Resolve the active restaurant for the current owner/staff. Honors the
- * `active_restaurant` cookie (set by the restaurant switcher) and otherwise
- * falls back to the first accessible restaurant. Returns null when the user
- * has none yet (so the UI can show the "create your first restaurant" flow). */
-export async function getPrimaryRestaurant(): Promise<OwnerRestaurant | null> {
-	const list = await getAccessibleRestaurants()
-	if (list.length === 0) return null
-	const store = await cookies()
-	const activeId = store.get(ACTIVE_RESTAURANT_COOKIE)?.value
-	if (activeId) {
-		const found = list.find((r) => r.id === activeId)
-		if (found) return found
-	}
-	return list[0]
-}
+/** Resolve the active restaurant from the user's accessible set. */
+export const getPrimaryRestaurant = cache(
+	async (): Promise<OwnerRestaurant | null> => {
+		const list = await getAccessibleRestaurants()
+		if (list.length === 0) return null
+		const store = await cookies()
+		const activeId = store.get(ACTIVE_RESTAURANT_COOKIE)?.value
+		return list.find((restaurant) => restaurant.id === activeId) ?? list[0]
+	},
+)
 
 export async function getDashboardStats(restaurantId: string) {
 	const supabase = await createClient()

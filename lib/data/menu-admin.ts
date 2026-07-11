@@ -37,18 +37,20 @@ export async function loadOwnerMenu(restaurantId: string) {
 		.maybeSingle()
 	if (!menu) return { menu: null, categories: [], items: [] }
 
-	const { data: categories } = await supabase
-		.from("menu_categories")
-		.select("id, name, sort_order")
-		.eq("menu_id", menu.id)
-		.order("sort_order")
-	const { data: items } = await supabase
-		.from("menu_items")
-		.select(
-			"id, name, description, base_price, is_available, category_id, sort_order, images, tags",
-		)
-		.eq("restaurant_id", restaurantId)
-		.order("sort_order")
+	const [{ data: categories }, { data: items }] = await Promise.all([
+		supabase
+			.from("menu_categories")
+			.select("id, name, sort_order")
+			.eq("menu_id", menu.id)
+			.order("sort_order"),
+		supabase
+			.from("menu_items")
+			.select(
+				"id, name, description, base_price, is_available, category_id, sort_order, images, tags",
+			)
+			.eq("restaurant_id", restaurantId)
+			.order("sort_order"),
+	])
 
 	const layout = (menu.layout ?? null) as MenuLayout | null
 	return {
