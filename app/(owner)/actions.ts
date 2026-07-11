@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { slugify } from "@/lib/utils"
+import type { TablesUpdate } from "@/types/database"
 import { ACTIVE_RESTAURANT_COOKIE } from "@/lib/data/owner"
 import { randomUUID } from "crypto"
 import {
@@ -19,6 +20,19 @@ async function requireUser() {
 	} = await supabase.auth.getUser()
 	if (!user) throw new Error("UNAUTHORIZED")
 	return { supabase, user }
+}
+
+function optionalHttpUrl(value: FormDataEntryValue | null) {
+	const raw = String(value ?? "").trim()
+	if (!raw) return null
+	try {
+		const parsed = new URL(raw)
+		return parsed.protocol === "http:" || parsed.protocol === "https:"
+			? parsed.toString()
+			: null
+	} catch {
+		return null
+	}
 }
 
 async function setActiveRestaurantCookie(id: string) {
@@ -85,21 +99,80 @@ export async function setActiveRestaurant(formData: FormData) {
 	revalidatePath("/dashboard", "layout")
 }
 
+export async function updateProfile(formData: FormData) {
+	const { supabase, user } = await requireUser()
+	const fullName = String(formData.get("full_name") ?? "")
+		.trim()
+		.slice(0, 120)
+	const phone =
+		String(formData.get("phone") ?? "")
+			.trim()
+			.slice(0, 30) || null
+	const avatarUrl = optionalHttpUrl(formData.get("avatar_url"))
+	if (!fullName) return
+
+	await supabase
+		.from("profiles")
+		.update({ full_name: fullName, phone, avatar_url: avatarUrl })
+		.eq("id", user.id)
+
+	// Keep Supabase Auth metadata aligned with the public profile display name.
+	await supabase.auth.updateUser({ data: { full_name: fullName } })
+	revalidatePath("/dashboard", "layout")
+	revalidatePath("/dashboard/settings")
+}
+
 export async function updateRestaurantSettings(formData: FormData) {
-	const { supabase } = await requireUser()
-	const id = String(formData.get("id"))
+	const { supabase, user } = await requireUser()
+	const id = String(formData.get("id") ?? "")
+	const name = String(formData.get("name") ?? "")
+		.trim()
+		.slice(0, 160)
 	const primary = String(formData.get("primary") ?? "").trim()
-	const patch: Record<string, unknown> = {
-		name: String(formData.get("name") ?? ""),
-		city: String(formData.get("city") ?? "") || null,
-		description: String(formData.get("description") ?? "") || null,
+	if (!id || !name) return
+
+	const timezoneInput = String(
+		formData.get("timezone") ?? "Asia/Ho_Chi_Minh",
+	).trim()
+	let timezone = "Asia/Ho_Chi_Minh"
+	try {
+		new Intl.DateTimeFormat("vi-VN", { timeZone: timezoneInput }).format()
+		timezone = timezoneInput
+	} catch {
+		// Invalid IANA timezone: keep the safe project default.
+	}
+
+	const patch: TablesUpdate<"restaurants"> = {
+		name,
+		address:
+			String(formData.get("address") ?? "")
+				.trim()
+				.slice(0, 300) || null,
+		city:
+			String(formData.get("city") ?? "")
+				.trim()
+				.slice(0, 120) || null,
+		description:
+			String(formData.get("description") ?? "")
+				.trim()
+				.slice(0, 1000) || null,
+		logo_url: optionalHttpUrl(formData.get("logo_url")),
+		cover_url: optionalHttpUrl(formData.get("cover_url")),
+		timezone,
 		face_enabled: formData.get("face_enabled") === "on",
 	}
-	// Simple theme: store the chosen primary colour (HSL triplet) so the guest
-	// menu re-themes instantly via themeToCssVars.
 	if (primary) patch.theme_settings = { primary }
-	await supabase.from("restaurants").update(patch).eq("id", id)
+
+	// Defense in depth: only the authenticated owner can update this row.
+	// Supabase RLS applies the same ownership rule at the database layer.
+	await supabase
+		.from("restaurants")
+		.update(patch)
+		.eq("id", id)
+		.eq("owner_id", user.id)
+
 	revalidatePath("/dashboard/settings")
+	revalidatePath("/dashboard/restaurants")
 	revalidatePath("/dashboard", "layout")
 }
 
@@ -276,10 +349,7 @@ export async function saveRecommendationRule(formData: FormData) {
 	await supabase.from("recommendation_rules").insert({
 		restaurant_id: String(formData.get("restaurantId")),
 		rule_type: String(formData.get("rule_type") ?? "best_seller") as
-			| "time_of_day"
-			| "weather"
-			| "combo"
-			| "best_seller",
+			"time_of_day" | "weather" | "combo" | "best_seller",
 		name: String(formData.get("name") ?? "Luật mới"),
 		conditions: conditions as any,
 		suggested_item_ids: String(formData.get("suggested_item_ids") ?? "")
