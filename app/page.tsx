@@ -9,7 +9,7 @@ const features = [
 	},
 	{
 		title: "Đặt món ≤ 4 chạm",
-		desc: "Thêm giỏ, gửeri đơn, theo dõi trạng thái realtime trên điện thoại.",
+		desc: "Thêm giỏ, gửi đơn, theo dõi trạng thái realtime trên điện thoại.",
 	},
 	{
 		title: "Gợi ý món thông minh",
