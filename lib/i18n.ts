@@ -12,7 +12,7 @@ const dict = {
 		"menu.recommended": "Gợi ý cho bạn",
 		"menu.addToCart": "Thêm vào giỏ",
 		"cart.title": "Giỏ hàng",
-		"cart.submit": "Gửeri đơn",
+		"cart.submit": "Gửi đơn",
 		"cart.empty": "Giỏ hàng đang trống",
 		"order.status.pending": "Chờ xác nhận",
 		"order.status.confirmed": "Đã xác nhận",

@@ -73,7 +73,7 @@ export function OrderTracker({
 				)}
 			</div>
 			<div>
-				<h1 className="text-xl font-semibold">Đã gửeri đơn tới {restaurantName}</h1>
+				<h1 className="text-xl font-semibold">Đã gửi đơn tới {restaurantName}</h1>
 				<p className="mt-1 text-muted-foreground">
 					Trạng thái: <b>{orderStatusLabel[status] ?? status}</b>
 				</p>
