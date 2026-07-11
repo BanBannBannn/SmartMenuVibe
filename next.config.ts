@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
 		// Server Actions are used by the owner/admin portals.
 		serverActions: { bodySizeLimit: "5mb" },
 	},
+	eslint: {
+		// Ignore ESLint circular JSON errors during build in Next.js 15
+		ignoreDuringBuilds: true,
+	},
 }
 
 export default nextConfig
