@@ -6,10 +6,19 @@ import { createClient } from "@/lib/supabase/server"
 
 export type AuthState = { error?: string } | undefined
 
-export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
+export async function signIn(
+	_prev: AuthState,
+	formData: FormData,
+): Promise<AuthState> {
 	const email = String(formData.get("email") ?? "")
+		.trim()
+		.toLowerCase()
 	const password = String(formData.get("password") ?? "")
-	const redirectTo = String(formData.get("redirect") ?? "/dashboard")
+	const requestedRedirect = String(formData.get("redirect") ?? "/dashboard")
+	const redirectTo =
+		requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+			? requestedRedirect
+			: "/dashboard"
 	const supabase = await createClient()
 	const { error } = await supabase.auth.signInWithPassword({ email, password })
 	if (error) return { error: "Email hoặc mật khẩu không đúng." }
@@ -17,10 +26,17 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
 	redirect(redirectTo)
 }
 
-export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
+export async function signUp(
+	_prev: AuthState,
+	formData: FormData,
+): Promise<AuthState> {
 	const email = String(formData.get("email") ?? "")
+		.trim()
+		.toLowerCase()
 	const password = String(formData.get("password") ?? "")
 	const fullName = String(formData.get("full_name") ?? "")
+		.trim()
+		.slice(0, 120)
 	if (password.length < 8) return { error: "Mật khẩu tối thiểu 8 ký tự." }
 	const supabase = await createClient()
 	const { error } = await supabase.auth.signUp({
