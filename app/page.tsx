@@ -76,11 +76,11 @@ export default function HomePage() {
 								Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
 							</Button>
 						</Link>
-						{/* <Link href="/demo/ban-1">
+						<Link href="/circle-ban-mart/showcase">
 							<Button size="lg" variant="outline" className="bg-white">
 								Xem menu demo
 							</Button>
-						</Link> */}
+						</Link>
 					</div>
 					<div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
 						<span className="flex items-center gap-2">
