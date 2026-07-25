@@ -1,5 +1,13 @@
 import "server-only"
 import { createAdminClient } from "@/lib/supabase/admin"
+import {
+	autoTemplateFor,
+	buildFromTemplate,
+	parseLayout,
+	pruneLayout,
+	type MenuLayout,
+	type TemplateContext,
+} from "@/lib/menu-layout"
 
 /**
  * Guest-facing reads use the service role because anonymous guests have no
@@ -41,6 +49,12 @@ export type PublicMenu = {
 	categories: PublicCategory[]
 	// Decoration for the showcase (big-screen) menu; ignored by the ordering UI.
 	display: PublicMenuDisplay
+	/**
+	 * The designed board. Always present: a restaurant that never opened the
+	 * builder gets a template picked from its own category names, so the public
+	 * screen is never blank.
+	 */
+	layout: MenuLayout
 }
 
 export async function resolveTable(qrToken: string) {
@@ -83,17 +97,22 @@ export async function loadPublicMenu(
 		.limit(1)
 		.maybeSingle()
 	if (!menu)
-		return { restaurant, table: null, categories: [], display: emptyDisplay }
+		return {
+			restaurant,
+			table: null,
+			categories: [],
+			display: emptyDisplay,
+			layout: buildFromTemplate("photo-grid", {
+				restaurantName: restaurant.name,
+				categories: [],
+			}),
+		}
 
-	const layout = (menu.layout ?? {}) as {
-		title?: string | null
-		subtitle?: string | null
-		background?: string | null
-	}
+	const saved = parseLayout(menu.layout)
 	const display: PublicMenuDisplay = {
-		title: layout.title ?? null,
-		subtitle: layout.subtitle ?? null,
-		background: layout.background ?? null,
+		title: saved?.title ?? null,
+		subtitle: saved?.subtitle ?? null,
+		background: saved?.background ?? null,
 	}
 
 	const { data: categories } = await db
@@ -134,14 +153,37 @@ export async function loadPublicMenu(
 			table = { id: t.id, table_number: t.table_number }
 	}
 
+	const publicCategories: PublicCategory[] = (categories ?? []).map((c) => ({
+		id: c.id,
+		name: c.name,
+		items: byCategory.get(c.id) ?? [],
+	}))
+
+	const templateContext: TemplateContext = {
+		restaurantName: restaurant.name,
+		subtitle: saved?.subtitle ?? null,
+		categories: publicCategories.map((c) => ({
+			id: c.id,
+			name: c.name,
+			itemIds: c.items.map((i) => i.id),
+		})),
+	}
+	// A saved design wins; otherwise auto-pick a template from the menu's own
+	// vocabulary so a brand-new restaurant still gets a presentable board.
+	const layout =
+		saved && saved.elements.length > 0
+			? pruneLayout(
+					saved,
+					new Set(publicCategories.flatMap((c) => c.items.map((i) => i.id))),
+					new Set(publicCategories.map((c) => c.id)),
+				)
+			: buildFromTemplate(autoTemplateFor(templateContext), templateContext)
+
 	return {
 		restaurant,
 		table,
 		display,
-		categories: (categories ?? []).map((c) => ({
-			id: c.id,
-			name: c.name,
-			items: byCategory.get(c.id) ?? [],
-		})),
+		layout,
+		categories: publicCategories,
 	}
 }

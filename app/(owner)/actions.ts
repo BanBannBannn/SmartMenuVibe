@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { slugify } from "@/lib/utils"
-import type { TablesUpdate } from "@/types/database"
+import { parseLayout } from "@/lib/menu-layout"
+import type { Json, TablesUpdate } from "@/types/database"
 import { ACTIVE_RESTAURANT_COOKIE } from "@/lib/data/owner"
 import { randomUUID } from "crypto"
 import {
@@ -281,32 +282,29 @@ export async function saveItemOrder(
 	revalidatePath("/dashboard/builder")
 }
 
-// Persist the WYSIWYG canvas layout (positions + template + decoration) and
-// derive the guest-facing sort order from the visual arrangement.
-export async function saveMenuLayout(
-	menuId: string,
-	layout: {
-		template: string
-		positions: Record<string, { x: number; y: number; w: number }>
-		title?: string | null
-		subtitle?: string | null
-		background?: string | null
-	},
-	order: { id: string; sort_order: number; category_id: string }[],
-) {
+/**
+ * Persist the menu designer document. The layout is re-parsed server-side so a
+ * tampered payload can never store an element shape the renderer cannot draw.
+ *
+ * Item ordering is deliberately NOT touched here: category blocks read
+ * `sort_order`, which the Menu page owns. Moving a card on the design canvas
+ * must not silently reshuffle the guest ordering page.
+ */
+export async function saveMenuLayout(menuId: string, layout: unknown) {
 	const { supabase } = await requireUser()
-	await supabase.from("menus").update({ layout }).eq("id", menuId)
-	await Promise.all(
-		order.map((u) =>
-			supabase
-				.from("menu_items")
-				.update({ sort_order: u.sort_order, category_id: u.category_id })
-				.eq("id", u.id),
-		),
-	)
+	const parsed = parseLayout(layout)
+	if (!parsed) throw new Error("INVALID_LAYOUT")
+
+	// RLS scopes the update to menus the caller may manage.
+	const { error } = await supabase
+		.from("menus")
+		.update({ layout: parsed as unknown as Json })
+		.eq("id", menuId)
+	if (error) throw new Error(error.message)
+
 	revalidatePath("/dashboard/builder")
-	revalidatePath("/dashboard/menu")
 	revalidatePath("/dashboard/showcase")
+	revalidatePath("/[restaurantSlug]/showcase", "page")
 }
 
 export async function toggleItemTag(id: string, tag: string, on: boolean) {

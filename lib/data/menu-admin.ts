@@ -1,14 +1,8 @@
 import "server-only"
 import { createClient } from "@/lib/supabase/server"
+import { parseLayout, pruneLayout, type MenuLayout } from "@/lib/menu-layout"
 
-export type MenuLayout = {
-	template: "grid" | "list" | "magazine" | "free"
-	positions: Record<string, { x: number; y: number; w: number }>
-	// Decoration (shared by builder canvas + showcase menu).
-	title?: string | null
-	subtitle?: string | null
-	background?: string | null
-}
+export type { MenuLayout }
 
 export type AdminItem = {
 	id: string
@@ -52,14 +46,27 @@ export async function loadOwnerMenu(restaurantId: string) {
 			.order("sort_order"),
 	])
 
-	const layout = (menu.layout ?? null) as MenuLayout | null
+	const cats = (categories ?? []) as AdminCategory[]
+	const adminItems = (items ?? []).map((i) => ({
+		...i,
+		images: (i.images ?? []) as string[],
+		tags: (i.tags ?? []) as string[],
+	})) as AdminItem[]
+
+	// Elements pointing at deleted dishes/categories are dropped on read so the
+	// editor never shows a placeholder the owner cannot explain.
+	const parsed = parseLayout(menu.layout)
+	const layout = parsed
+		? pruneLayout(
+				parsed,
+				new Set(adminItems.map((i) => i.id)),
+				new Set(cats.map((c) => c.id)),
+			)
+		: null
+
 	return {
 		menu: { id: menu.id, name: menu.name, layout } as AdminMenu,
-		categories: (categories ?? []) as AdminCategory[],
-		items: (items ?? []).map((i) => ({
-			...i,
-			images: (i.images ?? []) as string[],
-			tags: (i.tags ?? []) as string[],
-		})) as AdminItem[],
+		categories: cats,
+		items: adminItems,
 	}
 }
