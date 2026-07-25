@@ -41,6 +41,7 @@ loadEnv()
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "SmartMenu@Demo2026"
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
 	console.error(
@@ -139,6 +140,14 @@ type SeedItem = {
 	variants?: { name: string; delta: number }[]
 }
 
+type SeedRecommendationRule = {
+	ruleType: "time_of_day" | "weather" | "combo" | "best_seller"
+	name: string
+	conditions?: Record<string, unknown>
+	suggestedItemNames?: string[]
+	priority?: number
+}
+
 type SeedCategory = { name: string; description?: string; items: SeedItem[] }
 
 type SeedRestaurant = {
@@ -157,6 +166,7 @@ type SeedRestaurant = {
 	primaryHsl: string
 	tables: number
 	categories: SeedCategory[]
+	recommendationRules?: SeedRecommendationRule[]
 }
 
 const SIZE_DRINK = [
@@ -172,7 +182,7 @@ const RESTAURANTS: SeedRestaurant[] = [
 		slug: "ga-ran-sai-gon",
 		name: "Gà Rán Sài Gòn",
 		email: "demo.garan@smartmenu.vn",
-		password: "SmartMenu@Demo2026",
+		password: DEMO_PASSWORD,
 		ownerName: "Chủ quán Gà Rán Sài Gòn",
 		description:
 			"Gà rán giòn rụm chuẩn công thức, combo tiết kiệm cho cả gia đình.",
@@ -383,6 +393,36 @@ const RESTAURANTS: SeedRestaurant[] = [
 				],
 			},
 		],
+		recommendationRules: [
+			{
+				ruleType: "time_of_day",
+				name: "Combo Buổi Trưa Năng Lượng",
+				conditions: { timesOfDay: ["noon"], from: "11:00", to: "14:00" },
+				suggestedItemNames: ["Combo Gà Giòn Solo", "Combo Burger Deluxe", "Burger bò phô mai"],
+				priority: 10,
+			},
+			{
+				ruleType: "weather",
+				name: "Đồ Uống Giải Nhiệt Ngày Nắng",
+				conditions: { weather: ["hot"] },
+				suggestedItemNames: ["Pepsi / 7Up", "Trà đào cam sả", "Milkshake dâu"],
+				priority: 8,
+			},
+			{
+				ruleType: "combo",
+				name: "Combo Tiết Kiệm Gia Đình & Nhóm Bạn",
+				conditions: {},
+				suggestedItemNames: ["Combo Gia Đình 4 Người", "Combo Đôi Vui Vẻ"],
+				priority: 6,
+			},
+			{
+				ruleType: "best_seller",
+				name: "Món Bán Chạy Tại Quán",
+				conditions: {},
+				suggestedItemNames: [],
+				priority: 5,
+			},
+		],
 	},
 
 	// =========================================================================
@@ -392,7 +432,7 @@ const RESTAURANTS: SeedRestaurant[] = [
 		slug: "circle-ban-mart",
 		name: "Circle Bân Mart",
 		email: "demo.mart@smartmenu.vn",
-		password: "SmartMenu@Demo2026",
+		password: DEMO_PASSWORD,
 		ownerName: "Quản lý Circle Bân Mart",
 		description:
 			"Cửa hàng tiện lợi 24/7: cơm hộp, mì ly, bánh mì, cà phê và đồ ăn nhanh tại quầy.",
@@ -614,6 +654,36 @@ const RESTAURANTS: SeedRestaurant[] = [
 				],
 			},
 		],
+		recommendationRules: [
+			{
+				ruleType: "time_of_day",
+				name: "Bữa Sáng Tỉnh Táo",
+				conditions: { timesOfDay: ["morning"], from: "06:00", to: "10:00" },
+				suggestedItemNames: ["Cà phê sữa đá", "Bánh mì thịt nguội", "Bánh sừng bò bơ"],
+				priority: 10,
+			},
+			{
+				ruleType: "time_of_day",
+				name: "Món Đêm Khuya 24/7",
+				conditions: { timesOfDay: ["late_night"], from: "22:00", to: "04:00" },
+				suggestedItemNames: ["Mì ly bò hầm", "Cơm gà xé hộp", "Pizza mini phô mai"],
+				priority: 9,
+			},
+			{
+				ruleType: "weather",
+				name: "Món Nóng & Cà Phê Ngày Mưa",
+				conditions: { weather: ["rain", "cold"] },
+				suggestedItemNames: ["Mì ly bò hầm", "Latte nóng", "Bánh mì chảo trứng"],
+				priority: 8,
+			},
+			{
+				ruleType: "best_seller",
+				name: "Top Món Tiện Lợi Bán Chạy",
+				conditions: {},
+				suggestedItemNames: [],
+				priority: 5,
+			},
+		],
 	},
 
 	// =========================================================================
@@ -623,7 +693,7 @@ const RESTAURANTS: SeedRestaurant[] = [
 		slug: "quan-ban-ban",
 		name: "Quán Bân Bân",
 		email: "demo.quan@smartmenu.vn",
-		password: "SmartMenu@Demo2026",
+		password: DEMO_PASSWORD,
 		ownerName: "Chủ Quán Bân Bân",
 		description:
 			"Quán ăn gia đình: phở, bún, cơm phần, lẩu và đồ nướng, phục vụ tận bàn.",
@@ -830,6 +900,36 @@ const RESTAURANTS: SeedRestaurant[] = [
 				],
 			},
 		],
+		recommendationRules: [
+			{
+				ruleType: "time_of_day",
+				name: "Điểm Tâm Sáng Ấm Bụng",
+				conditions: { timesOfDay: ["morning"], from: "06:00", to: "10:30" },
+				suggestedItemNames: ["Phở bò tái nạm", "Bún bò Huế", "Trà đá"],
+				priority: 10,
+			},
+			{
+				ruleType: "time_of_day",
+				name: "Cơm Phần & Lẩu Gia Đình Buổi Tối",
+				conditions: { timesOfDay: ["evening"], from: "17:30", to: "21:30" },
+				suggestedItemNames: ["Lẩu thái hải sản", "Cơm tấm sườn bì chả", "Sườn nướng BBQ"],
+				priority: 9,
+			},
+			{
+				ruleType: "weather",
+				name: "Lẩu & Nướng Ngày Mưa Se Lạnh",
+				conditions: { weather: ["rain", "cold"] },
+				suggestedItemNames: ["Lẩu thái hải sản", "Lẩu gà lá é", "Phở bò tái nạm"],
+				priority: 8,
+			},
+			{
+				ruleType: "combo",
+				name: "Combo Lẩu & Bia Tươi Tụ Tập",
+				conditions: {},
+				suggestedItemNames: ["Lẩu thái hải sản", "Bia tươi", "Gỏi ngó sen tôm thịt"],
+				priority: 7,
+			},
+		],
 	},
 ]
 
@@ -899,6 +999,7 @@ async function seedRestaurant(r: SeedRestaurant) {
 		// categories, items and variants).
 		await db.from("menus").delete().eq("restaurant_id", restaurantId)
 		await db.from("tables").delete().eq("restaurant_id", restaurantId)
+		await db.from("recommendation_rules").delete().eq("restaurant_id", restaurantId)
 	} else {
 		const { data, error } = await db
 			.from("restaurants")
@@ -922,6 +1023,7 @@ async function seedRestaurant(r: SeedRestaurant) {
 	if (menuError) throw menuError
 
 	const templateCategories: TemplateContext["categories"] = []
+	const itemNameToIdMap = new Map<string, string>()
 	let itemCount = 0
 
 	for (const [ci, cat] of r.categories.entries()) {
@@ -956,6 +1058,12 @@ async function seedRestaurant(r: SeedRestaurant) {
 			.select("id")
 		if (itemError) throw itemError
 
+		cat.items.forEach((item, ii) => {
+			if (items[ii]) {
+				itemNameToIdMap.set(item.name, items[ii].id)
+			}
+		})
+
 		// `insert().select()` preserves input order, so index alignment is safe.
 		const variantRows = cat.items.flatMap((item, ii) =>
 			(item.variants ?? []).map((v, vi) => ({
@@ -976,6 +1084,29 @@ async function seedRestaurant(r: SeedRestaurant) {
 			itemIds: items.map((i) => i.id),
 		})
 		itemCount += items.length
+	}
+
+	// Insert recommendation rules
+	if (r.recommendationRules && r.recommendationRules.length > 0) {
+		const rulesToInsert = r.recommendationRules.map((rule, idx) => {
+			const suggestedIds = (rule.suggestedItemNames ?? [])
+				.map((name) => itemNameToIdMap.get(name))
+				.filter((id): id is string => Boolean(id))
+
+			return {
+				restaurant_id: restaurantId,
+				rule_type: rule.ruleType,
+				name: rule.name,
+				conditions: rule.conditions ?? {},
+				suggested_item_ids: suggestedIds,
+				priority: rule.priority ?? 10 - idx,
+				is_active: true,
+			}
+		})
+		const { error: ruleError } = await db
+			.from("recommendation_rules")
+			.insert(rulesToInsert)
+		if (ruleError) throw ruleError
 	}
 
 	// Tables + QR tokens. Deterministic tokens keep printed demo QR codes valid
@@ -1014,7 +1145,7 @@ async function main() {
 	for (const r of RESTAURANTS) {
 		await seedRestaurant(r)
 	}
-	console.log("\n✅ Xong. Đăng nhập demo (mật khẩu SmartMenu@Demo2026):")
+	console.log(`\n✅ Xong. Đăng nhập demo (mật khẩu: ${DEMO_PASSWORD}):`)
 	for (const r of RESTAURANTS) console.log(`   ${r.email}  →  ${r.name}`)
 }
 

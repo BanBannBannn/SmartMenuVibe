@@ -3,11 +3,13 @@ import {
 	ArrowRight,
 	ChefHat,
 	Clock3,
+	Code2,
 	QrCode,
 	Sparkles,
 	UtensilsCrossed,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { DemoSelectorModal } from "@/components/home/demo-selector-modal"
 
 const features = [
 	{
@@ -45,7 +47,7 @@ export default function HomePage() {
 						<p className="mt-1 text-xs text-muted-foreground">Restaurant OS</p>
 					</div>
 				</Link>
-				<div className="flex gap-2">
+				<div className="flex items-center gap-2">
 					<Link href="/login">
 						<Button variant="ghost">Đăng nhập</Button>
 					</Link>
@@ -58,8 +60,8 @@ export default function HomePage() {
 			<section className="container grid items-center gap-12 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:py-20">
 				<div>
 					<div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm">
-						<Sparkles className="h-4 w-4" />
-						Vận hành nhà hàng trong một màn hình
+						<Code2 className="h-4 w-4 text-orange-500" />
+						Open Source Showcase Project
 					</div>
 					<h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl">
 						Menu đẹp hơn.
@@ -76,11 +78,7 @@ export default function HomePage() {
 								Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
 							</Button>
 						</Link>
-						<Link href="/circle-ban-mart/showcase">
-							<Button size="lg" variant="outline" className="bg-white">
-								Xem menu demo
-							</Button>
-						</Link>
+						<DemoSelectorModal />
 					</div>
 					<div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
 						<span className="flex items-center gap-2">
@@ -127,8 +125,33 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			<footer className="border-t border-orange-100 bg-white py-8 text-center text-sm text-muted-foreground">
-				© {new Date().getFullYear()} SmartMenu · Menu số · Đặt món · Realtime
+			<footer className="border-t border-orange-100 bg-white py-10">
+				<div className="container flex flex-col items-center justify-between gap-6 text-center sm:flex-row sm:text-left">
+					<div>
+						<p className="text-sm font-semibold text-slate-900">
+							SmartMenu · Open Source Showcase
+						</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Phát triển bởi <span className="font-medium text-slate-700">Trần Văn Gia Bân</span> (BanBannBannn) · Tham khảo mã nguồn & Kiến trúc.
+						</p>
+					</div>
+					<div className="flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
+						<Link href="/privacy" className="hover:text-primary transition">
+							Chính sách bảo mật
+						</Link>
+						<Link href="/terms" className="hover:text-primary transition">
+							Điều khoản sử dụng
+						</Link>
+						{/* <a
+							href="https://github.com/BanBannBannn/SmartMenuVibe"
+							target="_blank"
+							rel="noreferrer"
+							className="hover:text-primary transition font-medium"
+						>
+							GitHub Repository
+						</a> */}
+					</div>
+				</div>
 			</footer>
 		</main>
 	)
