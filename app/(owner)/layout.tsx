@@ -6,6 +6,7 @@ import { getPrimaryRestaurant } from "@/lib/data/owner"
 import { signOut } from "@/app/(auth)/actions"
 import { DashboardNav } from "@/components/dashboard/dashboard-nav"
 import { Button } from "@/components/ui/button"
+import { FeedbackModal } from "@/components/home/feedback-modal"
 
 export default async function OwnerLayout({
 	children,
@@ -47,6 +48,7 @@ export default async function OwnerLayout({
 						</div>
 					</Link>
 					<div className="flex items-center gap-2">
+						<FeedbackModal />
 						<div className="hidden items-center gap-2 rounded-full bg-slate-50 px-3 py-2 md:flex">
 							<UserRound className="h-4 w-4 text-slate-500" />
 							<span className="max-w-40 truncate text-sm">

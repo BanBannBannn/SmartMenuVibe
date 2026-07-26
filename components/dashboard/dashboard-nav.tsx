@@ -13,8 +13,10 @@ import {
 	QrCode,
 	Settings,
 	UtensilsCrossed,
+	MessageSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FeedbackModal } from "@/components/home/feedback-modal"
 
 const items = [
 	{ href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
@@ -47,7 +49,7 @@ export function DashboardNav() {
 						<p className="text-xs text-muted-foreground">Restaurant OS</p>
 					</div>
 				</Link>
-				<nav className="space-y-1">
+				<nav className="flex-1 space-y-1 overflow-y-auto">
 					{items.map((item) => (
 						<Link
 							key={item.href}
@@ -64,6 +66,16 @@ export function DashboardNav() {
 						</Link>
 					))}
 				</nav>
+				<div className="mt-auto border-t pt-3">
+					<FeedbackModal
+						trigger={
+							<button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-primary transition">
+								<MessageSquare className="h-4 w-4 text-primary" />
+								<span>Gửi phản ánh & Ý kiến</span>
+							</button>
+						}
+					/>
+				</div>
 			</aside>
 			<nav className="no-scrollbar sticky top-0 z-20 flex gap-1 overflow-x-auto border-b bg-white/95 px-3 py-2 backdrop-blur sm:hidden">
 				{items.map((item) => (
@@ -81,6 +93,14 @@ export function DashboardNav() {
 						{item.label}
 					</Link>
 				))}
+				<FeedbackModal
+					trigger={
+						<button className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 bg-orange-50 hover:bg-orange-100">
+							<MessageSquare className="h-4 w-4 text-primary" />
+							Góp ý
+						</button>
+					}
+				/>
 			</nav>
 		</>
 	)

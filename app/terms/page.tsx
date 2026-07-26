@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowLeft, FileText, UtensilsCrossed } from "lucide-react"
+import { Footer } from "@/components/home/footer"
 
 export const metadata = {
 	title: "Điều khoản sử dụng | SmartMenu",
@@ -74,6 +75,7 @@ export default function TermsPage() {
 					</div>
 				</div>
 			</main>
+			<Footer />
 		</div>
 	)
 }

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowLeft, ShieldCheck, UtensilsCrossed } from "lucide-react"
+import { Footer } from "@/components/home/footer"
 
 export const metadata = {
 	title: "Chính sách bảo mật | SmartMenu",
@@ -101,6 +102,7 @@ export default function PrivacyPage() {
 					</div>
 				</div>
 			</main>
+			<Footer />
 		</div>
 	)
 }
