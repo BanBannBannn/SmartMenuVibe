@@ -18,16 +18,29 @@ export function timeOfDayFromHour(hour: number): TimeOfDay {
 	return "late_night"
 }
 
-/** Convert an OpenWeather condition + temperature to our simple bucket. */
+/**
+ * Convert an OpenWeather condition + temperature to our simple bucket.
+ * Thresholds are tuned for Vietnam: Saigon sits at 28-33°C most of the year
+ * with high humidity, so "hot" also uses the feels-like temperature (29°C air
+ * at 75% humidity feels like 33°C). Without that the bucket stayed "neutral"
+ * nearly all day and weather rules never fired.
+ */
 export function weatherBucket(
 	main: string,
 	tempC: number,
+	feelsLikeC?: number,
 ): WeatherBucket {
 	const m = main.toLowerCase()
-	if (m.includes("rain") || m.includes("drizzle") || m.includes("thunderstorm"))
+	if (
+		m.includes("rain") ||
+		m.includes("drizzle") ||
+		m.includes("thunderstorm") ||
+		m.includes("squall")
+	)
 		return "rain"
-	if (tempC <= 22) return "cold"
-	if (tempC >= 30) return "hot"
+	const feels = feelsLikeC ?? tempC
+	if (tempC <= 22 || feels <= 21) return "cold"
+	if (tempC >= 30 || feels >= 32) return "hot"
 	return "neutral"
 }
 
@@ -38,9 +51,14 @@ function hhmmToMinutes(value: string): number {
 
 /** Does the current hour fall inside a rule's [from, to] window? Handles
  * windows that wrap past midnight (e.g. 22:00 -> 02:00). */
-function hourInWindow(hour: number, from?: string, to?: string): boolean {
+function hourInWindow(
+	hour: number,
+	minute: number,
+	from?: string,
+	to?: string,
+): boolean {
 	if (!from || !to) return true
-	const now = hour * 60
+	const now = hour * 60 + minute
 	const start = hhmmToMinutes(from)
 	const end = hhmmToMinutes(to)
 	if (start <= end) return now >= start && now <= end
@@ -97,7 +115,12 @@ export function recommend(
 					rule.conditions.timesOfDay.includes(tod)
 				if (
 					matchesList &&
-					hourInWindow(context.hour, rule.conditions.from, rule.conditions.to)
+					hourInWindow(
+						context.hour,
+						context.minute ?? 0,
+						rule.conditions.from,
+						rule.conditions.to,
+					)
 				) {
 					push(rule.suggestedItemIds, REASONS[tod])
 				}

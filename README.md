@@ -33,7 +33,6 @@ Dự án đi kèm 3 quán demo được cấu hình sẵn 3 mẫu giao diện me
 - **State & Drag-Drop**: **@dnd-kit** (menu builder), **TanStack Query** + **Zustand** (giỏ hàng)
 - **Backend & Database**: **Supabase** (Postgres, Auth, Storage, Realtime, RLS)
 - **Engine Gợi Ý (Recommendation)**: Thuần TypeScript, gợi ý món theo khung giờ, thời tiết (OpenWeatherMap) và món bán chạy.
-- **Biometric & AI**: **Azure Face API** (lưu ý: Detect luôn bật; Identify gắn feature-flag)
 - **Báo cáo & QR**: **Recharts** (doanh thu), **qrcode** (QR bàn)
 - **Container**: **Docker** (multi-stage, `output: standalone`)
 
@@ -46,7 +45,7 @@ Dự án đi kèm 3 quán demo được cấu hình sẵn 3 mẫu giao diện me
 npm install
 
 # 2. Tạo file môi trường
-cp .env.example .env.local   # điền các khoá Supabase / Azure / OpenWeather
+cp .env.example .env.local   # điền các khoá Supabase / OpenWeather
 
 # 3. Khởi tạo cơ sở dữ liệu & nạp dữ liệu Seed 3 quán demo
 supabase db push            # hoặc áp dụng các file trong supabase/migrations
@@ -84,7 +83,7 @@ app/
   (guest)/[restaurantSlug]/[tableToken]/   # Trang đặt món cho thực khách
   (owner)/dashboard/                       # Cổng quản lý nhà hàng
   (admin)/admin/                           # Cổng Super Admin
-  api/                                     # Order, face scan, AI, recommendations API
+  api/                                     # Order, AI, recommendations API
   privacy/, terms/                         # Trang Chính sách bảo mật & Điều khoản sử dụng
 lib/
   supabase/         # Supabase client / server / admin / middleware
@@ -99,7 +98,7 @@ scripts/seed-demo.ts# Seed script 3 quán demo & quy tắc gợi ý món
 ## 🔐 Bảo Mật, Tuân Thủ & Giấy Phép
 
 - **Bảo mật RLS**: Bật Row Level Security trên 100% bảng trong database; service-role key chỉ dùng phía server.
-- **Quyền riêng tư Sinh trắc học (Azure Face)**: Cần sự đồng ý rõ ràng của người dùng; ảnh gốc **không bao giờ lưu trữ**; nhật ký nhận diện tự động xoá sau 30 ngày (`face_scan_logs`).
+- **Không dùng sinh trắc học**: Tính năng quét khuôn mặt đã được gỡ bỏ; hệ thống không thu thập ảnh hay dữ liệu khuôn mặt.
 - **Giấy phép (License)**: Dự án mã nguồn mở phục vụ mục đích học tập & tham khảo cộng đồng.
 
 ---

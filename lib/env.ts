@@ -28,20 +28,6 @@ export const serverEnv = {
 	get dbPoolerUrl() {
 		return process.env.SUPABASE_DB_POOLER_URL ?? ""
 	},
-	azureFace: {
-		get key() {
-			return process.env.AZURE_FACE_KEY ?? ""
-		},
-		get endpoint() {
-			return process.env.AZURE_FACE_ENDPOINT ?? ""
-		},
-		get identifyEnabled() {
-			return process.env.FACE_IDENTIFY_ENABLED === "true"
-		},
-		get personGroup() {
-			return process.env.AZURE_FACE_PERSON_GROUP ?? "smartmenu-guests"
-		},
-	},
 	get openWeatherKey() {
 		return process.env.OPENWEATHER_API_KEY ?? ""
 	},

@@ -24,6 +24,8 @@ export type RecommendationRule = {
 export type RecommendationContext = {
 	/** Local hour 0-23 at the restaurant. */
 	hour: number
+	/** Local minute 0-59; lets "17:30"-style windows match precisely. */
+	minute?: number
 	weather: WeatherBucket
 	/** Item ids sorted by sales volume desc (from analytics). */
 	bestSellerItemIds: string[]

@@ -319,22 +319,6 @@ export default async function SettingsPage() {
 											</div>
 										</div>
 									</div>
-									<label className="flex items-start gap-3 rounded-2xl border bg-slate-50 p-4 text-sm">
-										<input
-											type="checkbox"
-											name="face_enabled"
-											defaultChecked={restaurant.face_enabled}
-											className="mt-0.5 h-4 w-4"
-										/>
-										<span>
-											<span className="font-medium">
-												Bật nhận diện khuôn mặt
-											</span>
-											<span className="mt-1 block text-xs text-muted-foreground">
-												Chỉ hoạt động khi khách chủ động đồng ý.
-											</span>
-										</span>
-									</label>
 									<div className="flex justify-end">
 										<SaveButton
 											idleLabel="Lưu nhà hàng"

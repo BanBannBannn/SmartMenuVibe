@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
 	// Rate limit by table + device + IP (Plan section 8.4).
 	const key = `order:${parsed.data.tableId ?? "na"}:${parsed.data.deviceToken}:${ip}`
-	if (!rateLimit(key, 5, 60_000).allowed) {
+	if (!(await rateLimit(key, 5, 60_000)).allowed) {
 		return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 })
 	}
 

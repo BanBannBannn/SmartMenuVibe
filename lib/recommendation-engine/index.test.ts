@@ -30,6 +30,10 @@ describe("weatherBucket", () => {
 		expect(weatherBucket("Clouds", 18)).toBe("cold")
 		expect(weatherBucket("Clouds", 26)).toBe("neutral")
 	})
+	it("treats humid Saigon heat as hot via feels-like", () => {
+		expect(weatherBucket("Clear", 29, 33.5)).toBe("hot")
+		expect(weatherBucket("Clear", 28, 30)).toBe("neutral")
+	})
 })
 
 describe("recommend", () => {
@@ -80,5 +84,21 @@ describe("recommend", () => {
 			bestSellerItemIds: Array.from({ length: 20 }, (_, i) => `x${i}`),
 		})
 		expect(res.itemIds).toHaveLength(6)
+	})
+
+	it("matches half-hour windows using the minute", () => {
+		const evening: RecommendationRule = {
+			id: "r3",
+			ruleType: "time_of_day",
+			name: "Tối",
+			conditions: { from: "17:30", to: "21:30" },
+			suggestedItemIds: ["lau"],
+			priority: 100,
+			isActive: true,
+		}
+		const ctx = { weather: "neutral" as const, bestSellerItemIds: [] }
+		expect(recommend([evening], { ...ctx, hour: 17, minute: 45 }).itemIds).toEqual(["lau"])
+		expect(recommend([evening], { ...ctx, hour: 17, minute: 15 }).itemIds).toEqual([])
+		expect(recommend([evening], { ...ctx, hour: 21, minute: 45 }).itemIds).toEqual([])
 	})
 })

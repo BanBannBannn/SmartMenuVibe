@@ -38,8 +38,8 @@ Tài liệu này đối chiếu với checklist ở **Section 10** của `SmartM
 - [x] **AI viết mô tả món** (feature-flag, tự fallback khi thiếu LLM key)
 - [x] **Engine gợi ý theo ngữ cảnh** (giờ + thời tiết + bán chạy + luật của quán) — thuần, có unit-test
 - [x] UI cấu hình luật gợi ý cho chủ quán
-- [x] **Màn hình đồng ý quét khuôn mặt riêng biệt** + Face Detect; Identify gắn cờ, mặc định tắt
-- [x] API: orders, face, ai/description, recommendations
+- [~] ~~Quét khuôn mặt (Azure Face)~~ — **đã gỡ bỏ 2026-11-17** (không dùng được + rủi ro dữ liệu cá nhân); migration `20261117000000_remove_face_scan.sql` xoá bảng/cột liên quan
+- [x] API: orders, ai/description, recommendations
 
 ### Phase 3 — Mở rộng (scaffold)
 - [x] PWA manifest + cờ `NEXT_PUBLIC_PAYMENTS_ENABLED`
@@ -56,13 +56,13 @@ Môi trường tạo bản này **không có mạng** nên chưa thể:
 - [ ] `npm install` (cài Next.js, React, Supabase SDK, dnd-kit, recharts, framer-motion, vitest…)
 - [ ] `npm run build` / kiểm tra type toàn dự án (cần types của Next/React sau khi cài)
 - [ ] Kết nối Supabase thật: chạy migrations, test Auth/RLS/Realtime/Storage
-- [ ] Gọi Azure Face, OpenWeather, LLM thật (đã tách sau feature-flag + fallback)
+- [ ] Gọi OpenWeather, LLM thật (đã tách sau feature-flag + fallback)
 - [ ] Chạy E2E Playwright trên server thật
 
 ### Việc cần làm khi có mạng
 1. `npm install` rồi `npm run build` để bắt lỗi type còn lại (đặc biệt ở tầng React/Next).
 2. Tạo project Supabase, điền `.env.local`, `supabase db push`, `npm run db:types`.
-3. Tạo Person Group Azure (nếu bật Identify sau khi được duyệt).
+3. ~~Tạo Person Group Azure~~ (không còn cần — đã gỡ quét mặt).
 4. Chạy `npm run test` (Vitest) và E2E Playwright.
 
 > Lưu ý: một số kiểu dữ liệu ở tầng UI dùng type React/Next chỉ có sau khi `npm install`. Logic nghiệp vụ thuần (định giá, gợi ý) đã được kiểm thử độc lập và chạy đạt trong môi trường hiện tại.

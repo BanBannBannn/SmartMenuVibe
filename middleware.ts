@@ -6,8 +6,16 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-	// Run on everything except static assets and image optimisation files.
+	// Only routes that read the Supabase session. Public guest pages (QR menu,
+	// showcase), the landing page and guest APIs skip middleware entirely, which
+	// saves a Supabase Auth round-trip on every QR scan. Server actions post to
+	// the page they live on, so /login and /register cover the auth actions.
 	matcher: [
-		"/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+		"/dashboard/:path*",
+		"/admin/:path*",
+		"/login",
+		"/register",
+		"/auth/:path*",
+		"/api/ai/:path*",
 	],
 }

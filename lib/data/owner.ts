@@ -5,7 +5,7 @@ import { getSessionUser } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 
 const RESTAURANT_FIELDS =
-	"id, owner_id, name, slug, status, description, theme_settings, face_enabled, address, city, timezone, created_at, logo_url, cover_url"
+	"id, owner_id, name, slug, status, description, theme_settings, address, city, timezone, created_at, logo_url, cover_url"
 
 export const ACTIVE_RESTAURANT_COOKIE = "active_restaurant"
 
@@ -18,7 +18,6 @@ export type OwnerRestaurant = {
 	description: string | null
 	address: string | null
 	theme_settings: unknown
-	face_enabled: boolean
 	city: string | null
 	timezone: string
 	created_at: string

@@ -77,48 +77,11 @@ export type Database = {
           },
         ]
       }
-      face_scan_logs: {
-        Row: {
-          consent_given: boolean
-          created_at: string
-          expires_at: string
-          id: string
-          matched: boolean
-          restaurant_id: string
-        }
-        Insert: {
-          consent_given?: boolean
-          created_at?: string
-          expires_at?: string
-          id?: string
-          matched?: boolean
-          restaurant_id: string
-        }
-        Update: {
-          consent_given?: boolean
-          created_at?: string
-          expires_at?: string
-          id?: string
-          matched?: boolean
-          restaurant_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "face_scan_logs_restaurant_id_fkey"
-            columns: ["restaurant_id"]
-            isOneToOne: false
-            referencedRelation: "restaurants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       guest_profiles: {
         Row: {
           created_at: string
           display_name: string | null
-          face_person_id: string | null
           id: string
-          opted_in_face: boolean
           phone: string | null
           preferences: Json | null
           restaurant_id: string
@@ -126,9 +89,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
-          face_person_id?: string | null
           id?: string
-          opted_in_face?: boolean
           phone?: string | null
           preferences?: Json | null
           restaurant_id: string
@@ -136,9 +97,7 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
-          face_person_id?: string | null
           id?: string
-          opted_in_face?: boolean
           phone?: string | null
           preferences?: Json | null
           restaurant_id?: string
@@ -667,7 +626,6 @@ export type Database = {
           cover_url: string | null
           created_at: string
           description: string | null
-          face_enabled: boolean
           id: string
           lat: number | null
           logo_url: string | null
@@ -687,7 +645,6 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           description?: string | null
-          face_enabled?: boolean
           id?: string
           lat?: number | null
           logo_url?: string | null
@@ -707,7 +664,6 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           description?: string | null
-          face_enabled?: boolean
           id?: string
           lat?: number | null
           logo_url?: string | null

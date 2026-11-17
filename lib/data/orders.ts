@@ -7,7 +7,7 @@ export type CreateOrderInput = {
 	tableId: string | null
 	deviceToken: string
 	note?: string
-	lines: CartLine[]
+	lines: (CartLine & { variantId?: string })[]
 }
 
 /**
@@ -19,15 +19,19 @@ export type CreateOrderInput = {
 export async function createGuestOrder(input: CreateOrderInput) {
 	const db = createAdminClient()
 
-	// Re-fetch authoritative prices for the referenced items/variants.
+	// Re-fetch authoritative prices for the referenced items/variants, scoped
+	// to this order's items only (in parallel).
 	const itemIds = [...new Set(input.lines.map((l) => l.menuItemId))]
-	const { data: items } = await db
-		.from("menu_items")
-		.select("id, name, base_price, is_available, restaurant_id")
-		.in("id", itemIds)
-	const { data: variants } = await db
-		.from("menu_item_variants")
-		.select("id, price_delta, menu_item_id")
+	const [{ data: items }, { data: variants }] = await Promise.all([
+		db
+			.from("menu_items")
+			.select("id, name, base_price, is_available, restaurant_id")
+			.in("id", itemIds),
+		db
+			.from("menu_item_variants")
+			.select("id, price_delta, menu_item_id")
+			.in("menu_item_id", itemIds),
+	])
 
 	const itemMap = new Map(items?.map((i) => [i.id, i]))
 	const variantMap = new Map(variants?.map((v) => [v.id, v]))
@@ -37,16 +41,21 @@ export async function createGuestOrder(input: CreateOrderInput) {
 		const item = itemMap.get(line.menuItemId)
 		if (!item || item.restaurant_id !== input.restaurantId || !item.is_available)
 			continue // silently drop unavailable / cross-tenant items
-		const variant = line.variantPriceDelta
-			? undefined
-			: variantMap.get((line as { variantId?: string }).variantId ?? "")
+		// The variant price always comes from the DB; a client-supplied delta is
+		// ignored. A variant that does not belong to this item drops the line.
+		let variant: { id: string; price_delta: number } | undefined
+		if (line.variantId) {
+			const v = variantMap.get(line.variantId)
+			if (!v || v.menu_item_id !== item.id) continue
+			variant = v
+		}
 		pricedLines.push({
 			menuItemId: item.id,
 			name: item.name,
 			basePrice: item.base_price,
 			quantity: Math.max(1, Math.floor(line.quantity)),
-			variantPriceDelta: variant?.price_delta ?? line.variantPriceDelta ?? 0,
-			variantId: (line as { variantId?: string }).variantId,
+			variantPriceDelta: variant?.price_delta ?? 0,
+			variantId: variant?.id,
 			note: line.note,
 		})
 	}
@@ -78,7 +87,12 @@ export async function createGuestOrder(input: CreateOrderInput) {
 		unit_price: l.unitPrice,
 		note: l.note ?? null,
 	}))
-	await db.from("order_items").insert(rows)
+	const { error: itemsError } = await db.from("order_items").insert(rows)
+	if (itemsError) {
+		// Do not leave an empty order on the kitchen board.
+		await db.from("orders").delete().eq("id", order.id)
+		throw new Error(itemsError.message)
+	}
 
 	return { orderId: order.id, total: priced.total }
 }

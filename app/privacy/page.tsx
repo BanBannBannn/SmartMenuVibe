@@ -61,21 +61,10 @@ export default function PrivacyPage() {
 						</section>
 
 						<section>
-							<h2 className="text-lg font-bold text-slate-900">3. Bảo mật Dữ liệu Sinh trắc học & Camera (Azure Face API)</h2>
+							<h2 className="text-lg font-bold text-slate-900">3. Không thu thập dữ liệu sinh trắc học</h2>
 							<p className="mt-2">
-								Đối với các tính năng thử nghiệm quét khuôn mặt nhận diện thực khách thân thiết:
+								SmartMenu không sử dụng camera, không quét hay nhận diện khuôn mặt và không thu thập bất kỳ dữ liệu sinh trắc học nào của thực khách.
 							</p>
-							<ul className="mt-2 list-disc space-y-1.5 pl-5">
-								<li>
-									<strong>Đồng ý rõ ràng (Consent):</strong> Hệ thống chỉ tiến hành quét khi nhận được sự đồng ý chủ động của người dùng.
-								</li>
-								<li>
-									<strong>Không lưu trữ hình ảnh gốc:</strong> Hình ảnh khuôn mặt từ camera chỉ được xử lý tạm thời để trích xuất vector khuôn mặt mã hoá (face vector/embedding), hình ảnh gốc sẽ được hủy ngay lập tức.
-								</li>
-								<li>
-									<strong>Tự động xoá dữ liệu (Auto-expiry):</strong> Các nhật ký quét khuôn mặt (`face_scan_logs`) tự động được hệ thống xóa bỏ hoàn toàn sau 30 ngày.
-								</li>
-							</ul>
 						</section>
 
 						<section>

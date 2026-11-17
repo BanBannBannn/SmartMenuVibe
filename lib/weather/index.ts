@@ -58,7 +58,7 @@ export async function getCurrentWeather(
 		if (!res.ok) return neutral
 		const data = (await res.json()) as {
 			weather?: { main: string }[]
-			main?: { temp: number }
+			main?: { temp: number; feels_like?: number }
 			name?: string
 		}
 		const main = data.weather?.[0]?.main ?? "Clear"
@@ -66,7 +66,7 @@ export async function getCurrentWeather(
 		const snapshot: WeatherSnapshot = {
 			main,
 			tempC,
-			bucket: weatherBucket(main, tempC),
+			bucket: weatherBucket(main, tempC, data.main?.feels_like),
 			city: data.name ?? city,
 			fetchedAt: Date.now(),
 		}

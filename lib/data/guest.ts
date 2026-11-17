@@ -1,4 +1,5 @@
 import "server-only"
+import { unstable_cache } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
 	autoTemplateFor,
@@ -43,7 +44,6 @@ export type PublicMenu = {
 		city: string | null
 		lat: number | null
 		lon: number | null
-		face_enabled: boolean
 	}
 	table: { id: string; table_number: string } | null
 	categories: PublicCategory[]
@@ -67,41 +67,51 @@ export async function resolveTable(qrToken: string) {
 	return data && data.is_active ? data : null
 }
 
-/** Load the public menu for a restaurant slug + optional table token. */
-export async function loadPublicMenu(
-	slug: string,
-	qrToken?: string,
-): Promise<PublicMenu | null> {
+/** Cache tag for every public menu. Owner/admin writes call revalidateTag on it. */
+export const PUBLIC_MENU_TAG = "public-menu"
+
+type CachedMenu = Omit<PublicMenu, "table">
+
+/**
+ * Uncached loader. Two round-trips instead of five: the restaurant row first
+ * (everything else is keyed by its id), then the active menu with its
+ * categories and the available items in parallel.
+ */
+async function fetchPublicMenu(slug: string): Promise<CachedMenu | null> {
 	const db = createAdminClient()
 	const { data: restaurant } = await db
 		.from("restaurants")
 		.select(
-			"id, name, slug, logo_url, cover_url, theme_settings, city, lat, lon, face_enabled, status",
+			"id, name, slug, logo_url, cover_url, theme_settings, city, lat, lon, status",
 		)
 		.eq("slug", slug)
 		.maybeSingle()
 	if (!restaurant || restaurant.status !== "active") return null
 
-	const emptyDisplay: PublicMenuDisplay = {
-		title: null,
-		subtitle: null,
-		background: null,
-	}
+	const [{ data: menu }, { data: items }] = await Promise.all([
+		db
+			.from("menus")
+			.select("id, layout, menu_categories(id, name, sort_order)")
+			.eq("restaurant_id", restaurant.id)
+			.eq("is_active", true)
+			.order("sort_order")
+			.limit(1)
+			.maybeSingle(),
+		db
+			.from("menu_items")
+			.select(
+				"id, name, description, base_price, images, tags, category_id, is_available, sort_order, menu_item_variants(id, name, price_delta)",
+			)
+			.eq("restaurant_id", restaurant.id)
+			.eq("is_available", true)
+			.order("sort_order"),
+	])
 
-	const { data: menu } = await db
-		.from("menus")
-		.select("id, layout")
-		.eq("restaurant_id", restaurant.id)
-		.eq("is_active", true)
-		.order("sort_order")
-		.limit(1)
-		.maybeSingle()
 	if (!menu)
 		return {
 			restaurant,
-			table: null,
 			categories: [],
-			display: emptyDisplay,
+			display: { title: null, subtitle: null, background: null },
 			layout: buildFromTemplate("photo-grid", {
 				restaurantName: restaurant.name,
 				categories: [],
@@ -115,20 +125,9 @@ export async function loadPublicMenu(
 		background: saved?.background ?? null,
 	}
 
-	const { data: categories } = await db
-		.from("menu_categories")
-		.select("id, name, sort_order")
-		.eq("menu_id", menu.id)
-		.order("sort_order")
-
-	const { data: items } = await db
-		.from("menu_items")
-		.select(
-			"id, name, description, base_price, images, tags, category_id, is_available, sort_order, menu_item_variants(id, name, price_delta)",
-		)
-		.eq("restaurant_id", restaurant.id)
-		.eq("is_available", true)
-		.order("sort_order")
+	const categories = [...(menu.menu_categories ?? [])].sort(
+		(a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+	)
 
 	const byCategory = new Map<string, PublicItem[]>()
 	for (const it of items ?? []) {
@@ -146,14 +145,7 @@ export async function loadPublicMenu(
 		byCategory.set(it.category_id, list)
 	}
 
-	let table = null
-	if (qrToken) {
-		const t = await resolveTable(qrToken)
-		if (t && t.restaurant_id === restaurant.id)
-			table = { id: t.id, table_number: t.table_number }
-	}
-
-	const publicCategories: PublicCategory[] = (categories ?? []).map((c) => ({
+	const publicCategories: PublicCategory[] = categories.map((c) => ({
 		id: c.id,
 		name: c.name,
 		items: byCategory.get(c.id) ?? [],
@@ -179,11 +171,35 @@ export async function loadPublicMenu(
 				)
 			: buildFromTemplate(autoTemplateFor(templateContext), templateContext)
 
-	return {
-		restaurant,
-		table,
-		display,
-		layout,
-		categories: publicCategories,
-	}
+	return { restaurant, display, layout, categories: publicCategories }
+}
+
+/**
+ * Menus change rarely and are read on every QR scan, so they are served from
+ * the Next data cache. Owner/admin server actions invalidate PUBLIC_MENU_TAG on
+ * every menu write; the 5-minute revalidate is only a safety net for writes
+ * made outside the app (seed scripts, SQL editor).
+ */
+const getCachedPublicMenu = unstable_cache(fetchPublicMenu, ["public-menu"], {
+	tags: [PUBLIC_MENU_TAG],
+	revalidate: 300,
+})
+
+/** Load the public menu for a restaurant slug + optional table token. */
+export async function loadPublicMenu(
+	slug: string,
+	qrToken?: string,
+): Promise<PublicMenu | null> {
+	// The table lookup is not cached (tables can be deactivated at any time) but
+	// runs in parallel with the menu.
+	const [menu, t] = await Promise.all([
+		getCachedPublicMenu(slug),
+		qrToken ? resolveTable(qrToken) : Promise.resolve(null),
+	])
+	if (!menu) return null
+	const table =
+		t && t.restaurant_id === menu.restaurant.id
+			? { id: t.id, table_number: t.table_number }
+			: null
+	return { ...menu, table }
 }

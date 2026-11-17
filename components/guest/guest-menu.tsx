@@ -15,7 +15,6 @@ import type { PublicMenu, PublicItem, PublicVariant } from "@/lib/data/guest"
 import { useCart, getDeviceToken } from "@/lib/stores/cart"
 import { formatVnd, cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { FaceConsent } from "./face-consent"
 import { OrderTracker } from "./order-tracker"
 
 // ---------------------------------------------------------------------------
@@ -116,7 +115,6 @@ export function GuestMenu({ menu }: { menu: PublicMenu }) {
 	const [submitting, setSubmitting] = useState(false)
 	const [recommendedIds, setRecommendedIds] = useState<string[]>([])
 	const [reasons, setReasons] = useState<Record<string, string>>({})
-	const [showFace, setShowFace] = useState(menu.restaurant.face_enabled)
 	const [activeItem, setActiveItem] = useState<PublicItem | null>(null)
 
 	const nonEmptyCategories = useMemo(
@@ -276,13 +274,6 @@ export function GuestMenu({ menu }: { menu: PublicMenu }) {
 			)}
 
 			<div className="container mt-6 space-y-10">
-				{showFace && (
-					<FaceConsent
-						restaurantId={menu.restaurant.id}
-						onDone={() => setShowFace(false)}
-					/>
-				)}
-
 				{/* ---- Recommendations ---- */}
 				{recommended.length > 0 && (
 					<section id="cat-recommended">

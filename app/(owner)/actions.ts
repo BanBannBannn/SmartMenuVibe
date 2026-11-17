@@ -1,6 +1,7 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
+import { PUBLIC_MENU_TAG } from "@/lib/data/guest"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { slugify } from "@/lib/utils"
@@ -13,6 +14,11 @@ import {
 	deleteMenuImageByUrl,
 	isImageFile,
 } from "@/lib/storage/menu-images"
+
+/** Drop cached guest/showcase menus after any write that changes them. */
+function refreshPublicMenus() {
+	revalidateTag(PUBLIC_MENU_TAG)
+}
 
 async function requireUser() {
 	const supabase = await createClient()
@@ -71,6 +77,7 @@ export async function createRestaurant(formData: FormData) {
 		await setActiveRestaurantCookie(restaurant.id)
 	}
 	revalidatePath("/dashboard", "layout")
+	refreshPublicMenus()
 }
 
 /** Switch which restaurant the owner is currently managing (multi-restaurant). */
@@ -160,7 +167,6 @@ export async function updateRestaurantSettings(formData: FormData) {
 		logo_url: optionalHttpUrl(formData.get("logo_url")),
 		cover_url: optionalHttpUrl(formData.get("cover_url")),
 		timezone,
-		face_enabled: formData.get("face_enabled") === "on",
 	}
 	if (primary) patch.theme_settings = { primary }
 
@@ -175,6 +181,7 @@ export async function updateRestaurantSettings(formData: FormData) {
 	revalidatePath("/dashboard/settings")
 	revalidatePath("/dashboard/restaurants")
 	revalidatePath("/dashboard", "layout")
+	refreshPublicMenus()
 }
 
 export async function deleteRecommendationRule(formData: FormData) {
@@ -196,6 +203,7 @@ export async function createCategory(formData: FormData) {
 		name: String(formData.get("name") ?? "Danh mục"),
 	})
 	revalidatePath("/dashboard/menu")
+	refreshPublicMenus()
 }
 
 export async function createMenuItem(formData: FormData) {
@@ -216,6 +224,7 @@ export async function createMenuItem(formData: FormData) {
 	})
 	revalidatePath("/dashboard/menu")
 	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
 }
 
 export async function updateMenuItem(formData: FormData) {
@@ -241,6 +250,7 @@ export async function updateMenuItem(formData: FormData) {
 	await supabase.from("menu_items").update(patch).eq("id", id)
 	revalidatePath("/dashboard/menu")
 	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
 }
 
 export async function toggleItemAvailability(id: string, available: boolean) {
@@ -250,6 +260,7 @@ export async function toggleItemAvailability(id: string, available: boolean) {
 		.update({ is_available: available })
 		.eq("id", id)
 	revalidatePath("/dashboard/menu")
+	refreshPublicMenus()
 }
 
 export async function deleteMenuItem(id: string) {
@@ -265,6 +276,7 @@ export async function deleteMenuItem(id: string) {
 	}
 	revalidatePath("/dashboard/menu")
 	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
 }
 
 export async function saveItemOrder(
@@ -280,6 +292,7 @@ export async function saveItemOrder(
 		),
 	)
 	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
 }
 
 /**
@@ -305,6 +318,7 @@ export async function saveMenuLayout(menuId: string, layout: unknown) {
 	revalidatePath("/dashboard/builder")
 	revalidatePath("/dashboard/showcase")
 	revalidatePath("/[restaurantSlug]/showcase", "page")
+	refreshPublicMenus()
 }
 
 export async function toggleItemTag(id: string, tag: string, on: boolean) {
@@ -323,6 +337,7 @@ export async function toggleItemTag(id: string, tag: string, on: boolean) {
 		.eq("id", id)
 	revalidatePath("/dashboard/builder")
 	revalidatePath("/dashboard/menu")
+	refreshPublicMenus()
 }
 
 export async function createTable(formData: FormData) {

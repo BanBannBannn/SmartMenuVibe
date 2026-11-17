@@ -1,6 +1,7 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
+import { PUBLIC_MENU_TAG } from "@/lib/data/guest"
 import { createClient } from "@/lib/supabase/server"
 
 async function requireAdmin() {
@@ -33,6 +34,7 @@ export async function setRestaurantStatus(formData: FormData) {
 		metadata: { status },
 	})
 	revalidatePath("/admin")
+	revalidateTag(PUBLIC_MENU_TAG)
 }
 
 export async function deleteRestaurant(formData: FormData) {
@@ -49,6 +51,7 @@ export async function deleteRestaurant(formData: FormData) {
 		metadata: {},
 	})
 	revalidatePath("/admin")
+	revalidateTag(PUBLIC_MENU_TAG)
 }
 
 export async function setUserRole(formData: FormData) {
