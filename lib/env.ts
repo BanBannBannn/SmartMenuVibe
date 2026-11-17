@@ -31,6 +31,18 @@ export const serverEnv = {
 	get openWeatherKey() {
 		return process.env.OPENWEATHER_API_KEY ?? ""
 	},
+	gemini: {
+		get key() {
+			return process.env.GEMINI_API_KEY ?? ""
+		},
+		/** Tried in order; each model has its own free-tier quota. */
+		get models() {
+			return (process.env.GEMINI_MODELS || "gemini-3.8-flash,gemini-3.5-flash-lite")
+				.split(",")
+				.map((m) => m.trim())
+				.filter(Boolean)
+		},
+	},
 	llm: {
 		get provider() {
 			return (process.env.LLM_PROVIDER ?? "").toLowerCase()

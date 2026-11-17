@@ -37,7 +37,7 @@ export default function TermsPage() {
 						Điều khoản sử dụng dịch vụ
 					</h1>
 					<p className="mt-2 text-sm text-slate-500">
-						Cập nhật lần cuối: Tháng 7, 2026 · Nền tảng SmartMenu Restaurant OS
+						Cập nhật lần cuối: Tháng 11, 2026 · Nền tảng SmartMenu Restaurant OS
 					</p>
 
 					<div className="mt-8 space-y-8 text-sm leading-relaxed text-slate-700">
@@ -67,7 +67,26 @@ export default function TermsPage() {
 						</section>
 
 						<section>
-							<h2 className="text-lg font-bold text-slate-900">4. Miễn trừ trách nhiệm</h2>
+							<h2 className="text-lg font-bold text-slate-900">4. Nội dung menu và quyền sử dụng</h2>
+							<ul className="mt-2 list-disc space-y-1.5 pl-5">
+								<li>Bạn sở hữu nội dung menu của mình (tên món, giá, mô tả, logo, hình ảnh bạn tải lên) và tự chịu trách nhiệm về quyền sử dụng các hình ảnh, logo đó.</li>
+								<li>Bạn được dùng miễn phí các mẫu thiết kế, phông chữ và nội dung do tính năng AI tạo ra để in ấn, trưng bày và kinh doanh cho quán của mình.</li>
+								<li>Bạn chịu trách nhiệm về tính chính xác của giá, thông tin món ăn và các thông tin dị ứng hiển thị cho khách.</li>
+							</ul>
+						</section>
+
+						<section>
+							<h2 className="text-lg font-bold text-slate-900">5. Tính năng AI</h2>
+							<ul className="mt-2 list-disc space-y-1.5 pl-5">
+								<li>Tính năng nhập menu từ ảnh sử dụng dịch vụ AI của bên thứ ba (Google Gemini). Ảnh menu được gửi đi để xử lý và không được SmartMenu lưu lại.</li>
+								<li>Không tải lên ảnh có thông tin cá nhân (khuôn mặt, số điện thoại, hoá đơn có tên khách). Nhà cung cấp AI có thể dùng nội dung gửi lên để cải thiện dịch vụ của họ.</li>
+								<li>Kết quả do AI tạo được cung cấp nguyên trạng và có thể sai. Bạn cần kiểm tra lại trước khi lưu hoặc in.</li>
+								<li>Tính năng miễn phí có giới hạn số lượt mỗi ngày và có thể tạm ngừng khi hết hạn mức của nhà cung cấp.</li>
+							</ul>
+						</section>
+
+						<section>
+							<h2 className="text-lg font-bold text-slate-900">6. Miễn trừ trách nhiệm</h2>
 							<p className="mt-2">
 								Hệ thống được cung cấp dưới dạng "AS IS" (nguyên bản thử nghiệm). Tác giả không chịu trách nhiệm đối với bất kỳ thiệt hại kinh doanh trực tiếp hoặc gián tiếp nào do việc lạm dụng dữ liệu demo hoặc mã nguồn tự triển khai không đúng quy chuẩn.
 							</p>

@@ -1,6 +1,8 @@
 import { getPrimaryRestaurant } from "@/lib/data/owner"
 import { loadOwnerMenu } from "@/lib/data/menu-admin"
 import { MenuManager } from "@/components/menu/menu-manager"
+import { AiMenuImport } from "@/components/menu/ai-menu-import"
+import { geminiEnabled } from "@/lib/llm/gemini"
 
 export default async function MenuPage() {
 	const restaurant = await getPrimaryRestaurant()
@@ -10,6 +12,9 @@ export default async function MenuPage() {
 	return (
 		<div className="space-y-4">
 			<h1 className="text-2xl font-bold">Quản lý menu</h1>
+			{geminiEnabled() && (
+				<AiMenuImport restaurantId={restaurant.id} menuId={menu.id} />
+			)}
 			<MenuManager
 				restaurantId={restaurant.id}
 				menuId={menu.id}

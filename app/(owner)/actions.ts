@@ -9,6 +9,7 @@ import { parseLayout } from "@/lib/menu-layout"
 import type { Json, TablesUpdate } from "@/types/database"
 import { ACTIVE_RESTAURANT_COOKIE } from "@/lib/data/owner"
 import { randomUUID } from "crypto"
+import { menuDraftSchema, toItemRows } from "@/lib/ai/menu-import"
 import {
 	uploadMenuImage,
 	deleteMenuImageByUrl,
@@ -372,4 +373,113 @@ export async function saveRecommendationRule(formData: FormData) {
 		priority: Number(formData.get("priority") ?? 100),
 	})
 	revalidatePath("/dashboard/recommendations")
+}
+
+/**
+ * Save an AI-read menu draft after the owner reviewed it. The draft is
+ * re-validated here (the browser could send anything). Categories are matched
+ * by name so re-importing the same menu does not duplicate them, and items
+ * whose name already exists in that category are skipped. RLS limits every
+ * write to restaurants the caller manages.
+ */
+export async function importMenuDraft(
+	restaurantId: string,
+	menuId: string,
+	rawDraft: unknown,
+): Promise<
+	| { ok: true; categories: number; items: number; skipped: number }
+	| { ok: false; error: string }
+> {
+	const { supabase } = await requireUser()
+	const parsed = menuDraftSchema.safeParse(rawDraft)
+	if (!parsed.success) return { ok: false, error: "VALIDATION" }
+
+	const { data: menu } = await supabase
+		.from("menus")
+		.select("id")
+		.eq("id", menuId)
+		.eq("restaurant_id", restaurantId)
+		.maybeSingle()
+	if (!menu) return { ok: false, error: "MENU_NOT_FOUND" }
+
+	const [{ data: existingCats }, { data: existingItems }] = await Promise.all([
+		supabase
+			.from("menu_categories")
+			.select("id, name, sort_order")
+			.eq("menu_id", menuId),
+		supabase
+			.from("menu_items")
+			.select("name, category_id, sort_order")
+			.eq("restaurant_id", restaurantId),
+	])
+
+	const norm = (s: string) => s.trim().toLocaleLowerCase("vi")
+	const catIdByName = new Map(
+		(existingCats ?? []).map((c) => [norm(c.name), c.id] as const),
+	)
+	let catSort = Math.max(0, ...(existingCats ?? []).map((c) => c.sort_order ?? 0))
+
+	// Create the missing categories in one insert, with ids chosen up front.
+	const newCats: { id: string; menu_id: string; restaurant_id: string; name: string; sort_order: number }[] = []
+	for (const cat of parsed.data.categories) {
+		if (!cat.items.length || catIdByName.has(norm(cat.name))) continue
+		const id = randomUUID()
+		catIdByName.set(norm(cat.name), id)
+		newCats.push({ id, menu_id: menuId, restaurant_id: restaurantId, name: cat.name, sort_order: ++catSort })
+	}
+	if (newCats.length) {
+		const { error } = await supabase.from("menu_categories").insert(newCats)
+		if (error) return { ok: false, error: error.message }
+	}
+
+	const takenNames = new Set(
+		(existingItems ?? []).map((i) => `${i.category_id}|${norm(i.name)}`),
+	)
+	const itemSort = new Map<string, number>()
+	for (const i of existingItems ?? [])
+		itemSort.set(i.category_id, Math.max(itemSort.get(i.category_id) ?? 0, i.sort_order ?? 0))
+
+	const itemRows = []
+	const variantRows = []
+	let skipped = 0
+	for (const cat of parsed.data.categories) {
+		const categoryId = catIdByName.get(norm(cat.name))
+		if (!categoryId) continue
+		for (const item of cat.items) {
+			const key = `${categoryId}|${norm(item.name)}`
+			if (takenNames.has(key)) {
+				skipped++
+				continue
+			}
+			takenNames.add(key)
+			const id = randomUUID()
+			const { basePrice, variants } = toItemRows(item)
+			const sort = (itemSort.get(categoryId) ?? 0) + 1
+			itemSort.set(categoryId, sort)
+			itemRows.push({
+				id,
+				category_id: categoryId,
+				restaurant_id: restaurantId,
+				name: item.name,
+				description: item.description,
+				base_price: basePrice,
+				sort_order: sort,
+			})
+			for (const v of variants) variantRows.push({ ...v, menu_item_id: id })
+		}
+	}
+
+	if (itemRows.length) {
+		const { error } = await supabase.from("menu_items").insert(itemRows)
+		if (error) return { ok: false, error: error.message }
+	}
+	if (variantRows.length) {
+		const { error } = await supabase.from("menu_item_variants").insert(variantRows)
+		if (error) return { ok: false, error: error.message }
+	}
+
+	revalidatePath("/dashboard/menu")
+	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
+	return { ok: true, categories: newCats.length, items: itemRows.length, skipped }
 }
