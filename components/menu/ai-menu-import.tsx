@@ -9,22 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { aiErrorMessage } from "./ai-errors"
 
 type EditItem = MenuDraft["categories"][number]["items"][number] & {
 	include: boolean
 }
 type EditCategory = { name: string; items: EditItem[] }
 
-const ERRORS: Record<string, string> = {
-	FILE_COUNT: "Chọn từ 1 đến 3 ảnh hoặc 1 file PDF.",
-	FILE_TYPE: "Chỉ nhận ảnh JPG/PNG/WEBP hoặc PDF.",
-	FILE_SIZE: "Tệp quá lớn (tối đa khoảng 4MB). Thử ảnh nhỏ hơn hoặc PDF ít trang hơn.",
-	DAILY_LIMIT: "Bạn đã dùng hết 5 lượt hôm nay. Thử lại vào ngày mai nhé.",
-	AI_QUOTA: "AI miễn phí đang hết lượt. Thử lại sau ít phút.",
-	AI_DISABLED: "Tính năng AI chưa được cấu hình.",
-	AI_UNAVAILABLE: "AI đang bận hoặc lỗi. Thử lại sau.",
-	BAD_OUTPUT: "AI đọc menu không thành công. Thử ảnh rõ hơn, chụp thẳng và đủ sáng.",
-}
 
 const vnd = (n: number) => n.toLocaleString("vi-VN") + "đ"
 
@@ -82,7 +73,11 @@ export function AiMenuImport({
 			const res = await fetch("/api/ai/menu-import", { method: "POST", body: form })
 			const data = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				setError(ERRORS[data.error] ?? "Có lỗi xảy ra, thử lại sau.")
+				setError(
+					data.error === "BAD_OUTPUT"
+						? "AI đọc menu không thành công. Thử ảnh rõ hơn, chụp thẳng và đủ sáng."
+						: aiErrorMessage(data.error),
+				)
 				return
 			}
 			const cats = (data.draft as MenuDraft).categories

@@ -40,6 +40,8 @@ Tài liệu này đối chiếu với checklist ở **Section 10** của `SmartM
 - [x] UI cấu hình luật gợi ý cho chủ quán
 - [~] ~~Quét khuôn mặt (Azure Face)~~ — **đã gỡ bỏ 2026-11-17** (không dùng được + rủi ro dữ liệu cá nhân); migration `20261117000000_remove_face_scan.sql` xoá bảng/cột liên quan
 - [x] API: orders, ai/description, recommendations
+- [x] **AI miễn phí (Gemini free tier)** — 2026-11-17: nhập menu từ ảnh/PDF (`/api/ai/menu-import`), viết mô tả hàng loạt (`/api/ai/descriptions`), giới hạn 5 lượt/người/ngày, chủ quán duyệt trước khi lưu
+- [x] **Gợi ý mẫu thiết kế theo luật** (không AI) — `lib/design-suggest.ts`, hiện trong builder "Hợp với quán của bạn"
 
 ### Phase 3 — Mở rộng (scaffold)
 - [x] PWA manifest + cờ `NEXT_PUBLIC_PAYMENTS_ENABLED`

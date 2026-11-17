@@ -483,3 +483,29 @@ export async function importMenuDraft(
 	refreshPublicMenus()
 	return { ok: true, categories: newCats.length, items: itemRows.length, skipped }
 }
+
+/** Save reviewed AI descriptions. RLS + restaurant filter scope every update. */
+export async function saveDescriptions(
+	restaurantId: string,
+	updates: { id: string; description: string }[],
+): Promise<{ ok: boolean; saved: number }> {
+	const { supabase } = await requireUser()
+	const clean = updates
+		.slice(0, 100)
+		.map((u) => ({ id: String(u.id), description: String(u.description ?? "").trim().slice(0, 300) }))
+		.filter((u) => u.id && u.description)
+	const results = await Promise.all(
+		clean.map((u) =>
+			supabase
+				.from("menu_items")
+				.update({ description: u.description })
+				.eq("id", u.id)
+				.eq("restaurant_id", restaurantId),
+		),
+	)
+	const saved = results.filter((r) => !r.error).length
+	revalidatePath("/dashboard/menu")
+	revalidatePath("/dashboard/builder")
+	refreshPublicMenus()
+	return { ok: saved === clean.length, saved }
+}

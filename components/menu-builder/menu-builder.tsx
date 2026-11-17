@@ -36,6 +36,7 @@ import {
 import { buildRenderData } from "@/components/menu-canvas/renderer"
 import { BuilderCanvas } from "./canvas"
 import { Inspector } from "./inspector"
+import { signalsFrom, suggestTemplates } from "@/lib/design-suggest"
 import { LibraryPanel, type AddRequest } from "./library"
 import { MenuBoard } from "@/components/menu-board/menu-board"
 
@@ -144,6 +145,12 @@ export function MenuBuilder({
 	restaurantName: string
 	previewUrl: string
 }) {
+	// Rule-based "fits your menu" ranking for the template picker (no AI).
+	const templateSuggestions = useMemo(
+		() => suggestTemplates(signalsFrom(categories, items)).slice(0, 3),
+		[categories, items],
+	)
+
 	const templateContext = useMemo<TemplateContext>(
 		() => ({
 			restaurantName,
@@ -671,6 +678,7 @@ export function MenuBuilder({
 							categories={categories.map((c) => ({ id: c.id, name: c.name }))}
 							onLayoutChange={patchLayout}
 							onApplyTemplate={applyTemplate}
+							templateSuggestions={templateSuggestions}
 							onPatchElement={patchElement}
 							onDelete={deleteSelected}
 							onDuplicate={duplicateSelected}

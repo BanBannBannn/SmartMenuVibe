@@ -29,7 +29,8 @@ import type {
 	ShapeElement,
 	TextElement,
 } from "@/lib/menu-layout"
-import { LAYOUT_TEMPLATES } from "@/lib/menu-layout"
+import { LAYOUT_TEMPLATES, templateById } from "@/lib/menu-layout"
+import type { TemplateSuggestion } from "@/lib/design-suggest"
 import { cn } from "@/lib/utils"
 
 // =============================================================================
@@ -158,13 +159,43 @@ function DesignPanel({
 	layout,
 	onLayoutChange,
 	onApplyTemplate,
+	templateSuggestions,
 }: {
 	layout: MenuLayout
 	onLayoutChange: (patch: Partial<MenuLayout>) => void
 	onApplyTemplate: (templateId: string) => void
+	templateSuggestions: TemplateSuggestion[]
 }) {
+	// Only show suggestions that actually carry a reason; a zero-signal menu
+	// just gets the full list below.
+	const suggested = templateSuggestions.filter((s) => s.reasons.length > 0)
 	return (
 		<div className="space-y-5">
+			{suggested.length > 0 && (
+				<div className="space-y-2">
+					<SectionTitle>Hợp với quán của bạn</SectionTitle>
+					<div className="space-y-1.5">
+						{suggested.map((s) => {
+							const tpl = templateById(s.templateId)
+							if (!tpl) return null
+							return (
+								<button
+									key={s.templateId}
+									type="button"
+									onClick={() => onApplyTemplate(s.templateId)}
+									className="w-full rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-left transition hover:border-primary"
+								>
+									<span className="block text-sm font-semibold">{tpl.label}</span>
+									<span className="block text-xs text-muted-foreground">
+										{s.reasons.join(" · ")}
+									</span>
+								</button>
+							)
+						})}
+					</div>
+				</div>
+			)}
+
 			<div className="space-y-2">
 				<SectionTitle>Mẫu dựng sẵn</SectionTitle>
 				<p className="text-xs text-muted-foreground">
@@ -616,6 +647,7 @@ export function Inspector({
 	categories,
 	onLayoutChange,
 	onApplyTemplate,
+	templateSuggestions = [],
 	onPatchElement,
 	onDelete,
 	onDuplicate,
@@ -627,6 +659,7 @@ export function Inspector({
 	categories: InspectorCategory[]
 	onLayoutChange: (patch: Partial<MenuLayout>) => void
 	onApplyTemplate: (templateId: string) => void
+	templateSuggestions?: TemplateSuggestion[]
 	onPatchElement: (id: string, patch: Partial<MenuElement>) => void
 	onDelete: () => void
 	onDuplicate: () => void
@@ -638,6 +671,7 @@ export function Inspector({
 				layout={layout}
 				onLayoutChange={onLayoutChange}
 				onApplyTemplate={onApplyTemplate}
+				templateSuggestions={templateSuggestions}
 			/>
 		)
 	}

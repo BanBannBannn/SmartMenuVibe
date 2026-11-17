@@ -1,6 +1,7 @@
 import "server-only"
 import { serverEnv } from "@/lib/env"
 import { geminiEnabled, geminiGenerate } from "@/lib/llm/gemini"
+import { BANNED_PHRASES, cleanDescription } from "@/lib/ai/descriptions"
 
 /**
  * Optional LLM helper for menu content (Plan section 3.4).
@@ -93,14 +94,15 @@ export async function suggestDishDescription(
 	name: string,
 	ingredients: string,
 ): Promise<{ text: string; source: "ai" | "fallback" }> {
-	const prompt = `Viết một mô tả món ăn hấp dẫn, ngắn gọn (tối đa 2 câu, tiếng Việt) cho món "${name}"${
+	const prompt = `Viết mô tả 1 câu (tối đa 18 từ, tiếng Việt) cho món "${name}"${
 		ingredients ? ` với nguyên liệu: ${ingredients}` : ""
-	}. Chỉ trả về phần mô tả, không thêm tiêu đề.`
+	}. Nói cụ thể nguyên liệu, cách chế biến hoặc ăn kèm gì. Không dùng cụm sáo rỗng như ${BANNED_PHRASES.slice(0, 6)
+		.map((p) => `"${p}"`)
+		.join(", ")}, không dấu chấm than, không bịa xuất xứ. Chỉ trả về câu mô tả.`
 	const ai = await complete(prompt)
-	if (ai) return { text: ai, source: "ai" }
-	const base = ingredients
-		? `${name} — chế biến từ ${ingredients}, đậm đà hương vị.`
-		: `${name} — món đặc sắc, chuẩn vị của quán.`
+	const cleaned = ai ? cleanDescription(ai) : null
+	if (cleaned) return { text: cleaned, source: "ai" }
+	const base = ingredients ? `${name}, làm từ ${ingredients}.` : name
 	return { text: base, source: "fallback" }
 }
 

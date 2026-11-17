@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import { rateLimit } from "@/lib/rate-limit"
-import { GeminiError, geminiGenerate } from "@/lib/llm/gemini"
+import { geminiGenerate } from "@/lib/llm/gemini"
+import { aiErrorResponse } from "@/lib/ai/http"
 import {
 	MENU_IMPORT_SYSTEM,
 	menuDraftJsonSchema,
@@ -79,14 +80,7 @@ export async function POST(request: Request) {
 			remaining: limit.remaining,
 		})
 	} catch (err) {
-		if (err instanceof GeminiError) {
-			const status = err.code === "DISABLED" ? 503 : err.code === "QUOTA" ? 429 : 502
-			const error =
-				err.code === "DISABLED" ? "AI_DISABLED" : err.code === "QUOTA" ? "AI_QUOTA" : "AI_UNAVAILABLE"
-			return NextResponse.json({ error }, { status })
-		}
-		console.error("[menu-import]", err)
-		return NextResponse.json({ error: "AI_UNAVAILABLE" }, { status: 502 })
+		return aiErrorResponse(err, "menu-import")
 	}
 }
 

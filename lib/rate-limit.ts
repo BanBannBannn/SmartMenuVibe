@@ -6,7 +6,12 @@
  * serverless instances. Without them - or if Redis is unreachable - it falls
  * back to a per-instance in-memory Map, which is fine for local dev but leaky
  * on Vercel because each instance has its own memory.
+ *
+ * Keys contain IP addresses and device tokens, so they are hashed before they
+ * are stored anywhere (memory or Redis): the limiter only needs equality.
  */
+
+import { createHash } from "crypto"
 
 type Result = { allowed: boolean; remaining: number }
 type Bucket = { count: number; resetAt: number }
@@ -56,15 +61,16 @@ export async function rateLimit(
 	limit = 5,
 	windowMs = 60_000,
 ): Promise<Result> {
+	const hashed = createHash("sha256").update(key).digest("base64url")
 	const url = process.env.UPSTASH_REDIS_REST_URL
 	const token = process.env.UPSTASH_REDIS_REST_TOKEN
 	if (url && token) {
 		try {
-			const count = await redisCount(url, token, `rl:${key}`, windowMs)
+			const count = await redisCount(url, token, `rl:${hashed}`, windowMs)
 			return { allowed: count <= limit, remaining: Math.max(0, limit - count) }
 		} catch (err) {
 			console.warn("[rate-limit] Redis unavailable, using memory:", err)
 		}
 	}
-	return memoryLimit(key, limit, windowMs)
+	return memoryLimit(hashed, limit, windowMs)
 }
